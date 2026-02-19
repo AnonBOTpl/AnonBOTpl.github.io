@@ -5,11 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AnonBOTpl | Projects</title>
     <meta name="description" content="Portfolio of AnonBOTpl - Automation, AI Tools & Launchers">
-    <!-- Biblioteka do konwersji Markdown na HTML -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        /* --- USTAWIENIA GŁÓWNE (DARK MODE - GITHUB STYLE) --- */
         :root {
             --bg-color: #0d1117;
             --card-bg: #161b22;
@@ -33,38 +31,25 @@
 
         .container { max-width: 1200px; margin: 0 auto; }
 
-        /* --- HEADER --- */
         header {
             text-align: center; padding: 60px 0 40px;
             border-bottom: 1px solid var(--border-color); margin-bottom: 40px;
         }
         h1 { font-size: 2.5rem; margin-bottom: 10px; color: #fff; }
-        .subtitle { font-size: 1.1rem; color: var(--text-muted); }
+        .subtitle { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 20px; }
         .highlight { color: var(--accent); }
 
-        /* --- STATYSTYKI ODWIEDZIN --- */
-        .stats-container {
-            margin-top: 15px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            background: var(--card-bg);
-            display: inline-block;
-            padding: 8px 20px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
+        /* Pojemnik na odznakę z licznikiem */
+        .badge-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
         }
-        .stats-container span {
-            color: var(--accent);
-            font-weight: bold;
-        }
-        .stats-divider { margin: 0 10px; color: var(--border-color); }
 
-        /* --- GRID --- */
         .projects-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px;
         }
 
-        /* --- KARTA --- */
         .card {
             background-color: var(--card-bg); border: 1px solid var(--border-color);
             border-radius: 6px; padding: 25px; display: flex; flex-direction: column;
@@ -78,7 +63,6 @@
         }
         .project-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; flex-grow: 1; }
 
-        /* --- TAGI --- */
         .tech-stack { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .tag {
             font-size: 0.75rem; padding: 2px 10px; border-radius: 12px;
@@ -87,7 +71,6 @@
         }
         .lang-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
         
-        /* Kolory języków */
         .color-C# { background-color: #178600; }
         .color-Java { background-color: #b07219; }
         .color-Python { background-color: #3572A5; }
@@ -97,22 +80,17 @@
         .color-HTML { background-color: #e34c26; }
         .color-default { background-color: #8b949e; }
 
-        /* --- PRZYCISKI --- */
         .btn-group { display: flex; gap: 10px; margin-top: auto; }
-        
         .btn {
             flex: 1; text-align: center; padding: 8px 0; border-radius: 6px;
             font-size: 0.9rem; font-weight: 500; cursor: pointer; text-decoration: none;
             transition: 0.2s; border: 1px solid var(--border-color);
         }
-        
         .btn-readme { background-color: #238636; color: #ffffff; border-color: rgba(240,246,252,0.1); }
         .btn-readme:hover { background-color: #2ea043; }
-
         .btn-repo { background-color: var(--btn-bg); color: var(--text-main); }
         .btn-repo:hover { background-color: var(--btn-hover); border-color: var(--text-muted); }
 
-        /* --- MODAL (POPUP) --- */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.8); z-index: 1000; backdrop-filter: blur(3px);
@@ -129,12 +107,9 @@
             border-radius: 10px 10px 0 0;
         }
         .modal-title { font-weight: 600; color: var(--text-main); }
-        .close-btn {
-            background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;
-        }
+        .close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
         .close-btn:hover { color: #fff; }
 
-        /* Stylizacja Markdown w modalu */
         .modal-body { padding: 30px; overflow-y: auto; color: var(--text-main); }
         .modal-body img { max-width: 100%; border-radius: 5px; margin: 10px 0; }
         .modal-body pre { background: #161b22; padding: 15px; border-radius: 6px; overflow-x: auto; margin-bottom: 15px; }
@@ -154,17 +129,14 @@
             <h1>AnonBOTpl</h1>
             <p class="subtitle">AI Tools • Launchers • Extensions • <span class="highlight">Automation</span></p>
             
-            <!-- LICZNIK ODWIEDZIN -->
-            <div class="stats-container">
-                Wyświetlenia: <span id="view-count">...</span> 
-                <span class="stats-divider">|</span> 
-                Unikalni goście: <span id="unique-count">...</span>
+            <!-- NOWY NIEZAWODNY LICZNIK ODWIEDZIN (Odznaka GitHub) -->
+            <div class="badge-container">
+                <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fanonbotpl.github.io&count_bg=%2358A6FF&title_bg=%2321262D&icon=&icon_color=%23E7E7E7&title=Odwiedziny+(Unikalne+%2F+Wszystkie)&edge_flat=true" alt="Licznik odwiedzin">
             </div>
         </header>
 
-        <!-- KONTENER NA PROJEKTY -->
         <div class="projects-grid" id="projects-grid">
-            <p style="text-align:center; grid-column: 1 / -1; color: var(--text-muted);">🔄 Ładowanie projektów z GitHuba...</p>
+            <p style="text-align:center; grid-column: 1 / -1; color: var(--text-muted);">🔄 Ładowanie wszystkich projektów z GitHuba...</p>
         </div>
 
         <footer><p>© 2024 AnonBOTpl. Hosted on GitHub Pages.</p></footer>
@@ -186,7 +158,7 @@
         const user = 'AnonBOTpl';
 
         // ==========================================
-        // 1. AUTO-GENEROWANIE PROJEKTÓW Z GITHUBA
+        // 1. POBIERANIE WSZYSTKICH PROJEKTÓW
         // ==========================================
         async function loadRepos() {
             const grid = document.getElementById('projects-grid');
@@ -196,7 +168,10 @@
                 grid.innerHTML = ''; 
 
                 repos.forEach(repo => {
-                    if (!repo.fork && repo.name !== `${user}.github.io`) {
+                    // Usunięty warunek (!repo.fork) - teraz wyświetlają się wszystkie 15 projektów!
+                    // Wykluczamy tylko pliki źródłowe samej strony portfolio.
+                    if (repo.name !== `${user}.github.io`) {
+                        
                         let dotClass = "color-default";
                         if(repo.language === "C#") dotClass = "color-C#";
                         else if(repo.language === "Java") dotClass = "color-Java";
@@ -209,7 +184,9 @@
                         const card = document.createElement('div');
                         card.className = 'card';
                         card.innerHTML = `
-                            <a href="${repo.html_url}" class="project-title" target="_blank">${repo.name.replace(/-/g, ' ')}</a>
+                            <a href="${repo.html_url}" class="project-title" target="_blank">
+                                ${repo.fork ? '🔀 ' : ''}${repo.name.replace(/-/g, ' ')}
+                            </a>
                             <p class="project-desc">${repo.description || 'Brak opisu na GitHubie. Dodaj go w repozytorium!'}</p>
                             <div class="tech-stack">
                                 ${repo.language ? `<span class="tag"><span class="lang-dot ${dotClass}"></span>${repo.language}</span>` : ''}
@@ -223,55 +200,13 @@
                         grid.appendChild(card);
                     }
                 });
-
-                const moreCard = document.createElement('div');
-                moreCard.className = 'card';
-                moreCard.style = 'justify-content: center; align-items: center; text-align: center; border-style: dashed;';
-                moreCard.innerHTML = `
-                    <h3 style="margin-bottom: 10px; color: var(--text-main);">Więcej Projektów?</h3>
-                    <p class="project-desc" style="flex-grow: 0; margin-bottom: 15px;">Zajrzyj na mój profil, by sprawdzić inne forki i eksperymenty.</p>
-                    <a href="https://github.com/${user}" class="btn-repo btn" style="width: 100%; border: 1px solid var(--border-color);">Przejdź do profilu</a>
-                `;
-                grid.appendChild(moreCard);
-
             } catch (error) {
                 grid.innerHTML = '<p style="color: #ff6b6b; text-align:center; grid-column: 1 / -1;">❌ Nie udało się załadować projektów.</p>';
             }
         }
 
         // ==========================================
-        // 2. LICZNIK ODWIEDZIN (NAPRAWIONY)
-        // ==========================================
-        function initCounters() {
-            const totalEl = document.getElementById('view-count');
-            const uniqueEl = document.getElementById('unique-count');
-            
-            // Bezpieczna przestrzeń nazw (tylko małe litery, bez znaków specjalnych)
-            const namespace = 'anonbotplportfolio';
-
-            // Zawsze podbijamy ogólny licznik wyświetleń (Total)
-            fetch(`https://api.counterapi.dev/v1/${namespace}/total/up`)
-                .then(res => res.json())
-                .then(data => totalEl.innerText = data.count)
-                .catch(() => totalEl.innerText = '');
-
-            // Sprawdzamy, czy gość jest tu pierwszy raz (używamy localStorage)
-            if (!localStorage.getItem('has_visited_anonbotpl')) {
-                localStorage.setItem('has_visited_anonbotpl', 'true');
-                fetch(`https://api.counterapi.dev/v1/${namespace}/unique/up`)
-                    .then(res => res.json())
-                    .then(data => uniqueEl.innerText = data.count)
-                    .catch(() => uniqueEl.innerText = '');
-            } else {
-                fetch(`https://api.counterapi.dev/v1/${namespace}/unique`)
-                    .then(res => res.json())
-                    .then(data => uniqueEl.innerText = data.count)
-                    .catch(() => uniqueEl.innerText = '');
-            }
-        }
-
-        // ==========================================
-        // 3. LOGIKA OTWIERANIA OKNA README (NOWA, BAZUJĄCA NA API)
+        // 2. NIEZAWODNE ŁADOWANIE README (CZYSTY TEKST)
         // ==========================================
         const modal = document.getElementById('readmeModal');
         const modalBody = document.getElementById('modalBody');
@@ -283,29 +218,20 @@
             modalBody.innerHTML = '<p style="text-align:center; margin-top: 20px;">🔄 Wczytywanie z GitHuba...</p>';
 
             try {
-                // Zapytanie do oficjalnego API (automatycznie odnajduje README)
+                // 1. Pytamy API o informacje o README
                 const response = await fetch(`https://api.github.com/repos/${user}/${repoName}/readme`);
-                
-                if (!response.ok) {
-                    throw new Error('Nie znaleziono README');
-                }
+                if (!response.ok) throw new Error('Brak README');
                 
                 const data = await response.json();
                 
-                // Dekodowanie pliku z formatu Base64 (z obsługą polskich znaków i znaków nowej linii)
-                const cleanBase64 = data.content.replace(/\n/g, '');
-                const binaryString = atob(cleanBase64);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes = binaryString.charCodeAt(i);
-                }
-                // TextDecoder bezpiecznie radzi sobie z emoji i polskimi znakami
-                const textContent = new TextDecoder('utf-8').decode(bytes);
+                // 2. Omijamy problem kodowania Base64! Pobieramy bezpośrednio surowy tekst pliku z GitHuba
+                const rawResponse = await fetch(data.download_url);
+                const textContent = await rawResponse.text();
 
-                // Wyciągnięcie z API pełnego linku do repozytorium, aby naprawić ścieżki do obrazków z README
+                // 3. Renderowanie Markdown do HTML
                 const baseUrl = data.download_url.substring(0, data.download_url.lastIndexOf('/') + 1);
-
                 const renderer = new marked.Renderer();
+                
                 renderer.image = function(href, title, text) {
                     if (!href.startsWith('http')) {
                         const cleanHref = href.startsWith('./') ? href.substring(2) : href;
@@ -324,11 +250,8 @@
         function closeModal() { modal.style.display = 'none'; }
         window.onclick = function(event) { if (event.target == modal) closeModal(); }
 
-        // Uruchomienie skryptów po załadowaniu strony
-        window.onload = () => {
-            loadRepos();
-            initCounters();
-        };
+        // Start
+        window.onload = loadRepos;
     </script>
 </body>
 </html>
