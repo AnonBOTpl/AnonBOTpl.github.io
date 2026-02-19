@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AnonBOTpl | Projects</title>
     <meta name="description" content="Portfolio of AnonBOTpl - Automation, AI Tools & Launchers">
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
     
     <style>
         :root {
@@ -39,12 +39,26 @@
         .subtitle { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 20px; }
         .highlight { color: var(--accent); }
 
-        /* Pojemnik na odznakę z licznikiem */
-        .badge-container {
+        /* Licznik odwiedzin – renderowany po stronie JS, bez zewnętrznych trackerów */
+        .stats-container {
+            display: inline-flex;
+            gap: 20px;
             margin-top: 20px;
-            display: flex;
             justify-content: center;
+            flex-wrap: wrap;
         }
+        .stat-badge {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stat-badge span.num { color: var(--accent); font-weight: 700; font-size: 1rem; }
 
         .projects-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px;
@@ -71,8 +85,7 @@
         }
         .lang-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
         
-        /* Kolory języków */
-        .color-C# { background-color: #178600; }
+        .color-C\\# { background-color: #178600; }
         .color-Java { background-color: #b07219; }
         .color-Python { background-color: #3572A5; }
         .color-JavaScript { background-color: #f1e05a; }
@@ -92,10 +105,9 @@
         .btn-repo { background-color: var(--btn-bg); color: var(--text-main); }
         .btn-repo:hover { background-color: var(--btn-hover); border-color: var(--text-muted); }
 
-        /* Modal / Popup */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.8); z-index: 1000; backdrop-filter: blur(3px);
+            background: rgba(0,0,0,0.8); z-index: 1000; backdrop-filter: blur(3px);
         }
         .modal-content {
             position: relative; width: 90%; max-width: 900px; height: 85vh;
@@ -105,13 +117,12 @@
         }
         .modal-header {
             padding: 15px 20px; border-bottom: 1px solid var(--border-color);
-            display: flex; justify-content: space-between; align-items: center; background: var(--card-bg);
-            border-radius: 10px 10px 0 0;
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--card-bg); border-radius: 10px 10px 0 0;
         }
         .modal-title { font-weight: 600; color: var(--text-main); }
         .close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
         .close-btn:hover { color: #fff; }
-
         .modal-body { padding: 30px; overflow-y: auto; color: var(--text-main); }
         .modal-body img { max-width: 100%; border-radius: 5px; margin: 10px 0; }
         .modal-body pre { background: #161b22; padding: 15px; border-radius: 6px; overflow-x: auto; margin-bottom: 15px; }
@@ -126,172 +137,219 @@
 </head>
 <body>
 
-    <div class="container">
-        <header>
-            <h1>AnonBOTpl</h1>
-            <p class="subtitle">AI Tools • Launchers • Extensions • <span class="highlight">Automation</span></p>
-            
-            <!-- NOWY LICZNIK ODWIEDZIN (API Visitor Badge) -->
-            <div class="badge-container">
-                <img src="https://api.visitorbadge.io/api/visitors?path=anonbotpl.github.io&label=Odwiedziny&countColor=%2358A6FF&style=flat" alt="Licznik odwiedzin">
-            </div>
-        </header>
-
-        <div class="projects-grid" id="projects-grid">
-            <p style="text-align:center; grid-column: 1 / -1; color: var(--text-muted);">🔄 Ładowanie projektów z GitHuba...</p>
-        </div>
-
-        <footer><p>© 2024 AnonBOTpl. Hosted on GitHub Pages.</p></footer>
-    </div>
-
-    <!-- OKNO MODALNE DO WYŚWIETLANIA README -->
-    <div id="readmeModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-header">
-                <span class="modal-title" id="modalTitle">README</span>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="modal-body" id="modalBody">Loading...</div>
-        </div>
-    </div>
-
-    <!-- SKRYPTY -->
-    <script>
-        const user = 'AnonBOTpl';
-        // Przechowujemy informacje o głównej gałęzi repozytorium (main/master) do ładowania README
-        const repoData = {}; 
-
-        // ==========================================
-        // 1. POBIERANIE I SORTOWANIE PROJEKTÓW
-        // ==========================================
-        async function loadRepos() {
-            const grid = document.getElementById('projects-grid');
-            try {
-                const response = await fetch(`https://api.github.com/users/${user}/repos?per_page=100`);
-                let repos = await response.json();
-                
-                // --- NOWE SORTOWANIE ---
-                repos.sort((a, b) => {
-                    // 1. Forki lądują na samym dole
-                    if (a.fork !== b.fork) return a.fork ? 1 : -1;
-                    
-                    // 2. Projekty z gwiazdkami lądują na samej górze (malejąco)
-                    if (b.stargazers_count !== a.stargazers_count) {
-                        return b.stargazers_count - a.stargazers_count;
-                    }
-                    
-                    // 3. Reszta sortowana po dacie aktualizacji (najnowsze wyżej)
-                    return new Date(b.updated_at) - new Date(a.updated_at);
-                });
-
-                grid.innerHTML = ''; 
-
-                repos.forEach(repo => {
-                    if (repo.name !== `${user}.github.io`) {
-                        
-                        // Zapisanie informacji o głównej gałęzi (np. main/master) do ładowania obrazków w README
-                        repoData = repo.default_branch;
-
-                        let dotClass = "color-default";
-                        if(repo.language === "C#") dotClass = "color-C#";
-                        else if(repo.language === "Java") dotClass = "color-Java";
-                        else if(repo.language === "Python") dotClass = "color-Python";
-                        else if(repo.language === "JavaScript") dotClass = "color-JavaScript";
-                        else if(repo.language === "Batchfile") dotClass = "color-Batchfile";
-                        else if(repo.language === "TypeScript") dotClass = "color-TypeScript";
-                        else if(repo.language === "HTML") dotClass = "color-HTML";
-
-                        const card = document.createElement('div');
-                        card.className = 'card';
-                        card.innerHTML = `
-                            <a href="${repo.html_url}" class="project-title" target="_blank">
-                                ${repo.fork ? '🔀 ' : ''}${repo.name.replace(/-/g, ' ')}
-                            </a>
-                            <p class="project-desc">${repo.description || 'Brak opisu na GitHubie.'}</p>
-                            <div class="tech-stack">
-                                ${repo.language ? `<span class="tag"><span class="lang-dot ${dotClass}"></span>${repo.language}</span>` : ''}
-                                ${repo.stargazers_count > 0 ? `<span class="tag" style="color: #e3b341;">⭐ ${repo.stargazers_count}</span>` : `<span class="tag">⭐ 0</span>`}
-                            </div>
-                            <div class="btn-group">
-                                <button class="btn btn-readme" onclick="openReadme('${repo.name}')">📖 README</button>
-                                <a href="${repo.html_url}" class="btn btn-repo" target="_blank">GitHub</a>
-                            </div>
-                        `;
-                        grid.appendChild(card);
-                    }
-                });
-            } catch (error) {
-                grid.innerHTML = '<p style="color: #ff6b6b; text-align:center; grid-column: 1 / -1;">❌ Nie udało się załadować projektów.</p>';
-            }
-        }
-
-        // ==========================================
-        // 2. CAŁKOWICIE NOWE, NIEZAWODNE ŁADOWANIE README
-        // ==========================================
-        const modal = document.getElementById('readmeModal');
-        const modalBody = document.getElementById('modalBody');
-        const modalTitle = document.getElementById('modalTitle');
-
-        async function openReadme(repoName) {
-            modal.style.display = 'block';
-            modalTitle.innerText = repoName + " - README";
-            modalBody.innerHTML = '<p style="text-align:center; margin-top: 20px;">🔄 Wczytywanie z GitHuba...</p>';
-
-            // Pobieramy zapisaną wcześniej główną gałąź (jeśli brak, strzelamy w ciemno 'main')
-            const branch = repoData || 'main';
-            
-            // Różne warianty nazwy pliku, z którymi spotykamy się na GitHubie
-            const variants =;
-            
-            let textContent = null;
-            let finalUrl = "";
-
-            // Omijamy zabezpieczenia (API Rate Limit), pobierając pliki bezpośrednio z darmowego raw.githubusercontent!
-            for (let variant of variants) {
-                const url = `https://raw.githubusercontent.com/${user}/${repoName}/${branch}/${variant}`;
-                try {
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        textContent = await response.text();
-                        finalUrl = url;
-                        break; // Znaleźliśmy działający plik, przerywamy pętlę!
-                    }
-                } catch (e) {
-                    console.error("Nie znaleziono: ", url);
-                }
-            }
-
-            if (textContent) {
-                // Skrypt przygotowujący ścieżki do obrazków zagnieżdżonych w README (z względnych na bezwzględne)
-                const baseUrl = finalUrl.substring(0, finalUrl.lastIndexOf('/') + 1);
-                const renderer = new marked.Renderer();
-                
-                renderer.image = function(href, title, text) {
-                    if (!href.startsWith('http')) {
-                        // Usuwamy początkowe './' i '/' ze ścieżki, żeby połączyć link
-                        let cleanHref = href.replace(/^(\.\/|\/)/, '');
-                        href = baseUrl + cleanHref;
-                    }
-                    return `<img src="${href}" alt="${text || ''}" title="${title || ''}" style="max-width:100%;">`;
-                };
-
-                // Renderujemy gotowy HTML w oknie modalnym
-                modalBody.innerHTML = marked.parse(textContent, { renderer: renderer });
-            } else {
-                modalBody.innerHTML = '<p style="color: #ff6b6b; text-align:center;">❌ Brak pliku README w tym repozytorium.</p>';
-            }
-        }
-
-        function closeModal() { modal.style.display = 'none'; }
+<div class="container">
+    <header>
+        <h1>AnonBOTpl</h1>
+        <p class="subtitle">AI Tools • Launchers • Extensions • <span class="highlight">Automation</span></p>
         
-        window.onclick = function(event) { 
-            if (event.target == modal) {
-                closeModal(); 
+        <!-- Licznik odwiedzin (localStorage – lokalny, nie blokowany przez AdBlock) -->
+        <div class="stats-container">
+            <div class="stat-badge">👁️ Wyświetlenia: <span class="num" id="stat-views">–</span></div>
+            <div class="stat-badge">👤 Unikalni goście: <span class="num" id="stat-unique">–</span></div>
+        </div>
+    </header>
+
+    <div class="projects-grid" id="projects-grid">
+        <p style="text-align:center; grid-column: 1 / -1; color: var(--text-muted);">🔄 Ładowanie projektów z GitHuba...</p>
+    </div>
+
+    <footer><p>© 2024 AnonBOTpl. Hosted on GitHub Pages.</p></footer>
+</div>
+
+<!-- Modal README -->
+<div id="readmeModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title" id="modalTitle">README</span>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="modalBody">Loading...</div>
+    </div>
+</div>
+
+<script>
+// =============================================
+// KONFIGURACJA
+// =============================================
+const USER = 'AnonBOTpl';
+
+// Mapa: nazwa języka → klasa CSS kropki
+const LANG_COLORS = {
+    'C#': 'color-C#', 'Java': 'color-Java', 'Python': 'color-Python',
+    'JavaScript': 'color-JavaScript', 'Batchfile': 'color-Batchfile',
+    'TypeScript': 'color-TypeScript', 'HTML': 'color-HTML'
+};
+
+// Możliwe nazwy pliku README (różna wielkość liter)
+const README_VARIANTS = ['README.md', 'readme.md', 'Readme.md', 'README.MD'];
+
+// Słownik: repoName → defaultBranch (wypełniany przy ładowaniu repozytoriów)
+const repoBranches = {};
+
+
+// =============================================
+// 1. LICZNIK ODWIEDZIN (localStorage – nie blokowany przez AdBlock)
+// =============================================
+function updateVisitorStats() {
+    // --- Wyświetlenia (każde wejście na stronę) ---
+    let views = parseInt(localStorage.getItem('portfolio_views') || '0') + 1;
+    localStorage.setItem('portfolio_views', views);
+    document.getElementById('stat-views').textContent = views;
+
+    // --- Unikalni goście (raz na dobę na danej przeglądarce) ---
+    const today = new Date().toISOString().slice(0, 10); // "2025-06-30"
+    const lastVisit = localStorage.getItem('portfolio_last_visit');
+    let unique = parseInt(localStorage.getItem('portfolio_unique') || '0');
+    if (lastVisit !== today) {
+        unique += 1;
+        localStorage.setItem('portfolio_unique', unique);
+        localStorage.setItem('portfolio_last_visit', today);
+    }
+    document.getElementById('stat-unique').textContent = unique;
+}
+
+
+// =============================================
+// 2. POBIERANIE I WYŚWIETLANIE REPOZYTORIÓW
+// =============================================
+function getLangDotClass(lang) {
+    return LANG_COLORS[lang] || 'color-default';
+}
+
+function sortRepos(repos) {
+    const own = repos.filter(r => !r.fork);
+    const forks = repos.filter(r => r.fork);
+
+    const withStars = own.filter(r => r.stargazers_count > 0)
+        .sort((a, b) => b.stargazers_count - a.stargazers_count);
+
+    const noStars = own.filter(r => r.stargazers_count === 0)
+        .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+    forks.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+    return [...withStars, ...noStars, ...forks];
+}
+
+function createCard(repo) {
+    const dotClass = getLangDotClass(repo.language);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+        <a href="${repo.html_url}" class="project-title" target="_blank">
+            ${repo.fork ? '🔀 ' : ''}${repo.name.replace(/-/g, ' ')}
+        </a>
+        <p class="project-desc">${repo.description || 'Brak opisu na GitHubie.'}</p>
+        <div class="tech-stack">
+            ${repo.language
+                ? `<span class="tag"><span class="lang-dot ${dotClass}"></span>${repo.language}</span>`
+                : ''}
+            <span class="tag" ${repo.stargazers_count > 0 ? 'style="color:#e3b341;"' : ''}>
+                ⭐ ${repo.stargazers_count}
+            </span>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-readme" onclick="openReadme('${repo.name}')">📖 README</button>
+            <a href="${repo.html_url}" class="btn btn-repo" target="_blank">GitHub</a>
+        </div>
+    `;
+    return card;
+}
+
+async function loadRepos() {
+    const grid = document.getElementById('projects-grid');
+    try {
+        const res = await fetch(`https://api.github.com/users/${USER}/repos?per_page=100`);
+        if (!res.ok) throw new Error(`GitHub API: ${res.status}`);
+        const repos = await res.json();
+
+        // Zapisz domyślne gałęzie
+        repos.forEach(r => { repoBranches[r.name] = r.default_branch || 'main'; });
+
+        const sorted = sortRepos(
+            repos.filter(r => r.name !== `${USER}.github.io`)
+        );
+
+        grid.innerHTML = '';
+        sorted.forEach(r => grid.appendChild(createCard(r)));
+
+    } catch (err) {
+        grid.innerHTML = `<p style="color:#ff6b6b;text-align:center;grid-column:1/-1;">
+            ❌ Nie udało się załadować projektów.<br><small>${err.message}</small>
+        </p>`;
+    }
+}
+
+
+// =============================================
+// 3. MODAL Z PODGLĄDEM README
+// =============================================
+const modal     = document.getElementById('readmeModal');
+const modalBody = document.getElementById('modalBody');
+const modalTitle = document.getElementById('modalTitle');
+
+async function openReadme(repoName) {
+    modal.style.display = 'block';
+    modalTitle.textContent = repoName + ' – README';
+    modalBody.innerHTML = '<p style="text-align:center;margin-top:20px;">🔄 Wczytywanie z GitHuba...</p>';
+
+    const branch = repoBranches[repoName] || 'main';
+    let text = null, baseUrl = '';
+
+    for (const variant of README_VARIANTS) {
+        const url = `https://raw.githubusercontent.com/${USER}/${repoName}/${branch}/${variant}`;
+        try {
+            const res = await fetch(url);
+            if (res.ok) {
+                text = await res.text();
+                baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+                break;
+            }
+        } catch (_) { /* próbujemy dalej */ }
+    }
+
+    if (!text) {
+        // Ostatnia szansa: spróbuj gałąź "master" jeśli wcześniej mieliśmy "main"
+        if (branch !== 'master') {
+            for (const variant of README_VARIANTS) {
+                const url = `https://raw.githubusercontent.com/${USER}/${repoName}/master/${variant}`;
+                try {
+                    const res = await fetch(url);
+                    if (res.ok) {
+                        text = await res.text();
+                        baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
+                        break;
+                    }
+                } catch (_) { /* próbujemy dalej */ }
             }
         }
+    }
 
-        // Start skryptu przy wczytaniu strony
-        window.onload = loadRepos;
-    </script>
+    if (text) {
+        // Zamień względne ścieżki obrazków na bezwzględne
+        const renderer = new marked.Renderer();
+        renderer.image = function({ href, title, text: alt }) {
+            if (href && !href.startsWith('http')) {
+                href = baseUrl + href.replace(/^(\.\/|\/)/, '');
+            }
+            return `<img src="${href}" alt="${alt || ''}" title="${title || ''}" style="max-width:100%;">`;
+        };
+        modalBody.innerHTML = marked.parse(text, { renderer });
+    } else {
+        modalBody.innerHTML = '<p style="color:#ff6b6b;text-align:center;">❌ Brak pliku README w tym repozytorium.</p>';
+    }
+}
+
+function closeModal() { modal.style.display = 'none'; }
+window.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+
+// =============================================
+// START
+// =============================================
+updateVisitorStats();
+loadRepos();
+</script>
 </body>
 </html>
