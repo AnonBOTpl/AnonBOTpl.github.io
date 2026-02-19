@@ -71,6 +71,7 @@
         }
         .lang-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
         
+        /* Kolory języków */
         .color-C# { background-color: #178600; }
         .color-Java { background-color: #b07219; }
         .color-Python { background-color: #3572A5; }
@@ -91,6 +92,7 @@
         .btn-repo { background-color: var(--btn-bg); color: var(--text-main); }
         .btn-repo:hover { background-color: var(--btn-hover); border-color: var(--text-muted); }
 
+        /* Modal / Popup */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.8); z-index: 1000; backdrop-filter: blur(3px);
@@ -129,14 +131,14 @@
             <h1>AnonBOTpl</h1>
             <p class="subtitle">AI Tools • Launchers • Extensions • <span class="highlight">Automation</span></p>
             
-            <!-- NOWY NIEZAWODNY LICZNIK ODWIEDZIN (Odznaka GitHub) -->
+            <!-- NOWY LICZNIK ODWIEDZIN (API Visitor Badge) -->
             <div class="badge-container">
-                <img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fanonbotpl.github.io&count_bg=%2358A6FF&title_bg=%2321262D&icon=&icon_color=%23E7E7E7&title=Odwiedziny+(Unikalne+%2F+Wszystkie)&edge_flat=true" alt="Licznik odwiedzin">
+                <img src="https://api.visitorbadge.io/api/visitors?path=anonbotpl.github.io&label=Odwiedziny&countColor=%2358A6FF&style=flat" alt="Licznik odwiedzin">
             </div>
         </header>
 
         <div class="projects-grid" id="projects-grid">
-            <p style="text-align:center; grid-column: 1 / -1; color: var(--text-muted);">🔄 Ładowanie wszystkich projektów z GitHuba...</p>
+            <p style="text-align:center; grid-column: 1 / -1; color: var(--text-muted);">🔄 Ładowanie projektów z GitHuba...</p>
         </div>
 
         <footer><p>© 2024 AnonBOTpl. Hosted on GitHub Pages.</p></footer>
@@ -156,22 +158,40 @@
     <!-- SKRYPTY -->
     <script>
         const user = 'AnonBOTpl';
+        // Przechowujemy informacje o głównej gałęzi repozytorium (main/master) do ładowania README
+        const repoData = {}; 
 
         // ==========================================
-        // 1. POBIERANIE WSZYSTKICH PROJEKTÓW
+        // 1. POBIERANIE I SORTOWANIE PROJEKTÓW
         // ==========================================
         async function loadRepos() {
             const grid = document.getElementById('projects-grid');
             try {
-                const response = await fetch(`https://api.github.com/users/${user}/repos?sort=updated&per_page=100`);
-                const repos = await response.json();
+                const response = await fetch(`https://api.github.com/users/${user}/repos?per_page=100`);
+                let repos = await response.json();
+                
+                // --- NOWE SORTOWANIE ---
+                repos.sort((a, b) => {
+                    // 1. Forki lądują na samym dole
+                    if (a.fork !== b.fork) return a.fork ? 1 : -1;
+                    
+                    // 2. Projekty z gwiazdkami lądują na samej górze (malejąco)
+                    if (b.stargazers_count !== a.stargazers_count) {
+                        return b.stargazers_count - a.stargazers_count;
+                    }
+                    
+                    // 3. Reszta sortowana po dacie aktualizacji (najnowsze wyżej)
+                    return new Date(b.updated_at) - new Date(a.updated_at);
+                });
+
                 grid.innerHTML = ''; 
 
                 repos.forEach(repo => {
-                    // Usunięty warunek (!repo.fork) - teraz wyświetlają się wszystkie 15 projektów!
-                    // Wykluczamy tylko pliki źródłowe samej strony portfolio.
                     if (repo.name !== `${user}.github.io`) {
                         
+                        // Zapisanie informacji o głównej gałęzi (np. main/master) do ładowania obrazków w README
+                        repoData = repo.default_branch;
+
                         let dotClass = "color-default";
                         if(repo.language === "C#") dotClass = "color-C#";
                         else if(repo.language === "Java") dotClass = "color-Java";
@@ -187,10 +207,10 @@
                             <a href="${repo.html_url}" class="project-title" target="_blank">
                                 ${repo.fork ? '🔀 ' : ''}${repo.name.replace(/-/g, ' ')}
                             </a>
-                            <p class="project-desc">${repo.description || 'Brak opisu na GitHubie. Dodaj go w repozytorium!'}</p>
+                            <p class="project-desc">${repo.description || 'Brak opisu na GitHubie.'}</p>
                             <div class="tech-stack">
                                 ${repo.language ? `<span class="tag"><span class="lang-dot ${dotClass}"></span>${repo.language}</span>` : ''}
-                                <span class="tag">⭐ ${repo.stargazers_count}</span>
+                                ${repo.stargazers_count > 0 ? `<span class="tag" style="color: #e3b341;">⭐ ${repo.stargazers_count}</span>` : `<span class="tag">⭐ 0</span>`}
                             </div>
                             <div class="btn-group">
                                 <button class="btn btn-readme" onclick="openReadme('${repo.name}')">📖 README</button>
@@ -206,7 +226,7 @@
         }
 
         // ==========================================
-        // 2. NIEZAWODNE ŁADOWANIE README (CZYSTY TEKST)
+        // 2. CAŁKOWICIE NOWE, NIEZAWODNE ŁADOWANIE README
         // ==========================================
         const modal = document.getElementById('readmeModal');
         const modalBody = document.getElementById('modalBody');
@@ -217,40 +237,60 @@
             modalTitle.innerText = repoName + " - README";
             modalBody.innerHTML = '<p style="text-align:center; margin-top: 20px;">🔄 Wczytywanie z GitHuba...</p>';
 
-            try {
-                // 1. Pytamy API o informacje o README
-                const response = await fetch(`https://api.github.com/repos/${user}/${repoName}/readme`);
-                if (!response.ok) throw new Error('Brak README');
-                
-                const data = await response.json();
-                
-                // 2. Omijamy problem kodowania Base64! Pobieramy bezpośrednio surowy tekst pliku z GitHuba
-                const rawResponse = await fetch(data.download_url);
-                const textContent = await rawResponse.text();
+            // Pobieramy zapisaną wcześniej główną gałąź (jeśli brak, strzelamy w ciemno 'main')
+            const branch = repoData || 'main';
+            
+            // Różne warianty nazwy pliku, z którymi spotykamy się na GitHubie
+            const variants =;
+            
+            let textContent = null;
+            let finalUrl = "";
 
-                // 3. Renderowanie Markdown do HTML
-                const baseUrl = data.download_url.substring(0, data.download_url.lastIndexOf('/') + 1);
+            // Omijamy zabezpieczenia (API Rate Limit), pobierając pliki bezpośrednio z darmowego raw.githubusercontent!
+            for (let variant of variants) {
+                const url = `https://raw.githubusercontent.com/${user}/${repoName}/${branch}/${variant}`;
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        textContent = await response.text();
+                        finalUrl = url;
+                        break; // Znaleźliśmy działający plik, przerywamy pętlę!
+                    }
+                } catch (e) {
+                    console.error("Nie znaleziono: ", url);
+                }
+            }
+
+            if (textContent) {
+                // Skrypt przygotowujący ścieżki do obrazków zagnieżdżonych w README (z względnych na bezwzględne)
+                const baseUrl = finalUrl.substring(0, finalUrl.lastIndexOf('/') + 1);
                 const renderer = new marked.Renderer();
                 
                 renderer.image = function(href, title, text) {
                     if (!href.startsWith('http')) {
-                        const cleanHref = href.startsWith('./') ? href.substring(2) : href;
+                        // Usuwamy początkowe './' i '/' ze ścieżki, żeby połączyć link
+                        let cleanHref = href.replace(/^(\.\/|\/)/, '');
                         href = baseUrl + cleanHref;
                     }
-                    return `<img src="${href}" alt="${text}" title="${title || ''}">`;
+                    return `<img src="${href}" alt="${text || ''}" title="${title || ''}" style="max-width:100%;">`;
                 };
 
+                // Renderujemy gotowy HTML w oknie modalnym
                 modalBody.innerHTML = marked.parse(textContent, { renderer: renderer });
-
-            } catch (error) {
+            } else {
                 modalBody.innerHTML = '<p style="color: #ff6b6b; text-align:center;">❌ Brak pliku README w tym repozytorium.</p>';
             }
         }
 
         function closeModal() { modal.style.display = 'none'; }
-        window.onclick = function(event) { if (event.target == modal) closeModal(); }
+        
+        window.onclick = function(event) { 
+            if (event.target == modal) {
+                closeModal(); 
+            }
+        }
 
-        // Start
+        // Start skryptu przy wczytaniu strony
         window.onload = loadRepos;
     </script>
 </body>
