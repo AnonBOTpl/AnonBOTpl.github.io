@@ -6,6 +6,7 @@
     <title>AnonBOTpl | Projects</title>
     <meta name="description" content="Portfolio of AnonBOTpl - Automation, AI Tools & Launchers">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     
     <style>
         :root {
@@ -231,28 +232,66 @@ function sortRepos(repos) {
     return [...withStars, ...noStars, ...forks];
 }
 
+function sanitizeUrl(url) {
+    if (!url) return '#';
+    return (url.startsWith('http://') || url.startsWith('https://')) ? url : '#';
+}
+
 function createCard(repo) {
     const dotClass = getLangDotClass(repo.language);
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerHTML = `
-        <a href="${repo.html_url}" class="project-title" target="_blank">
-            ${repo.fork ? '🔀 ' : ''}${repo.name.replace(/-/g, ' ')}
-        </a>
-        <p class="project-desc">${repo.description || 'Brak opisu na GitHubie.'}</p>
-        <div class="tech-stack">
-            ${repo.language
-                ? `<span class="tag"><span class="lang-dot ${dotClass}"></span>${repo.language}</span>`
-                : ''}
-            <span class="tag" ${repo.stargazers_count > 0 ? 'style="color:#e3b341;"' : ''}>
-                ⭐ ${repo.stargazers_count}
-            </span>
-        </div>
-        <div class="btn-group">
-            <button class="btn btn-readme" onclick="openReadme('${repo.name}')">📖 README</button>
-            <a href="${repo.html_url}" class="btn btn-repo" target="_blank">GitHub</a>
-        </div>
-    `;
+
+    const titleLink = document.createElement('a');
+    titleLink.href = sanitizeUrl(repo.html_url);
+    titleLink.className = 'project-title';
+    titleLink.target = '_blank';
+    titleLink.textContent = (repo.fork ? '🔀 ' : '') + repo.name.replace(/-/g, ' ');
+    card.appendChild(titleLink);
+
+    const desc = document.createElement('p');
+    desc.className = 'project-desc';
+    desc.textContent = repo.description || 'Brak opisu na GitHubie.';
+    card.appendChild(desc);
+
+    const techStack = document.createElement('div');
+    techStack.className = 'tech-stack';
+
+    if (repo.language) {
+        const langTag = document.createElement('span');
+        langTag.className = 'tag';
+        const langDot = document.createElement('span');
+        langDot.className = `lang-dot ${dotClass}`;
+        langTag.appendChild(langDot);
+        langTag.append(repo.language);
+        techStack.appendChild(langTag);
+    }
+
+    const starTag = document.createElement('span');
+    starTag.className = 'tag';
+    if (repo.stargazers_count > 0) starTag.style.color = '#e3b341';
+    starTag.textContent = `⭐ ${repo.stargazers_count}`;
+    techStack.appendChild(starTag);
+    card.appendChild(techStack);
+
+    const btnGroup = document.createElement('div');
+    btnGroup.className = 'btn-group';
+
+    const readmeBtn = document.createElement('button');
+    readmeBtn.className = 'btn btn-readme';
+    readmeBtn.textContent = '📖 README';
+    readmeBtn.onclick = () => openReadme(repo.name);
+    btnGroup.appendChild(readmeBtn);
+
+    const repoLink = document.createElement('a');
+    repoLink.href = sanitizeUrl(repo.html_url);
+    repoLink.className = 'btn btn-repo';
+    repoLink.target = '_blank';
+    repoLink.textContent = 'GitHub';
+    btnGroup.appendChild(repoLink);
+
+    card.appendChild(btnGroup);
+
     return card;
 }
 
@@ -334,7 +373,7 @@ async function openReadme(repoName) {
             }
             return `<img src="${href}" alt="${alt || ''}" title="${title || ''}" style="max-width:100%;">`;
         };
-        modalBody.innerHTML = marked.parse(text, { renderer });
+        modalBody.innerHTML = DOMPurify.sanitize(marked.parse(text, { renderer }));
     } else {
         modalBody.innerHTML = '<p style="color:#ff6b6b;text-align:center;">❌ Brak pliku README w tym repozytorium.</p>';
     }
