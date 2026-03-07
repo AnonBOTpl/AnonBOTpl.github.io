@@ -288,6 +288,22 @@ const modal     = document.getElementById('readmeModal');
 const modalBody = document.getElementById('modalBody');
 const modalTitle = document.getElementById('modalTitle');
 
+async function tryFetchReadme(repoName, branch) {
+    for (const variant of README_VARIANTS) {
+        const url = `https://raw.githubusercontent.com/${USER}/${repoName}/${branch}/${variant}`;
+        try {
+            const res = await fetch(url);
+            if (res.ok) {
+                return {
+                    text: await res.text(),
+                    baseUrl: url.substring(0, url.lastIndexOf('/') + 1)
+                };
+            }
+        } catch (_) { /* próbujemy dalej */ }
+    }
+    return null;
+}
+
 async function openReadme(repoName) {
     modal.style.display = 'block';
     modalTitle.textContent = repoName + ' – README';
@@ -296,32 +312,18 @@ async function openReadme(repoName) {
     const branch = repoBranches[repoName] || 'main';
     let text = null, baseUrl = '';
 
-    for (const variant of README_VARIANTS) {
-        const url = `https://raw.githubusercontent.com/${USER}/${repoName}/${branch}/${variant}`;
-        try {
-            const res = await fetch(url);
-            if (res.ok) {
-                text = await res.text();
-                baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-                break;
-            }
-        } catch (_) { /* próbujemy dalej */ }
+    const result = await tryFetchReadme(repoName, branch);
+    if (result) {
+        text = result.text;
+        baseUrl = result.baseUrl;
     }
 
-    if (!text) {
-        // Ostatnia szansa: spróbuj gałąź "master" jeśli wcześniej mieliśmy "main"
-        if (branch !== 'master') {
-            for (const variant of README_VARIANTS) {
-                const url = `https://raw.githubusercontent.com/${USER}/${repoName}/master/${variant}`;
-                try {
-                    const res = await fetch(url);
-                    if (res.ok) {
-                        text = await res.text();
-                        baseUrl = url.substring(0, url.lastIndexOf('/') + 1);
-                        break;
-                    }
-                } catch (_) { /* próbujemy dalej */ }
-            }
+    if (!text && branch !== 'master') {
+        // Ostatnia szansa: spróbuj gałąź "master" jeśli wcześniej mieliśmy inną
+        const masterResult = await tryFetchReadme(repoName, 'master');
+        if (masterResult) {
+            text = masterResult.text;
+            baseUrl = masterResult.baseUrl;
         }
     }
 
